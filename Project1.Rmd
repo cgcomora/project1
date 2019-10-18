@@ -50,7 +50,7 @@ bicycle_df <- as.data.frame(bicycle)
 bicycle_df_trans <- t(bicycle_df)
 my_tibble <- tbl_df(bicycle_df_trans)
 #convert to html friencly datatable w/ no rownames
-my_table <- datatable(bicycle_df_trans,rownames = FALSE)
+my_table <- datatable(bicycle_df_trans,rownames = FALSE,caption = "Table of bicycle crash data")
 my_table
 ```
 
@@ -97,7 +97,7 @@ ctab4
 ```
 Now lets look at some plots to further explore what relationships might exist between variables.  
 
-```{r plot1, echo=FALSE, eval=TRUE}
+```{r plot1, echo=FALSE, eval=TRUE, warning=FALSE}
 #create bar plot
 g <- ggplot(my_tibble, aes(x = crsh_sevri))
 g + geom_bar(aes(fill=rd_conditi)) + labs(x="Crash Severity", title = "Barplot of crash severity and road condition") + theme(legend.title = element_blank())+ scale_x_discrete(labels = c("Disabling Injury", "Evident Injury", "Possible Injury", "Killed", "No Injury"))
@@ -112,12 +112,18 @@ g + geom_point(aes(y = bike_age, col = bike_sex)) + scale_y_discrete(breaks  = c
 
 Next, let's create a function to look at center and spread of age of bicyclists involved in crashes.
 
-```{r function, echo=FALSE, eval=TRUE}
+```{r function, echo=TRUE, eval=TRUE, warning=FALSE}
 my_summary <- function(x){
   mean <- mean(x, na.rm = TRUE)
   stdev <- sd(x, na.rm = TRUE)
 return(list(mean,stdev))
 }
 my_tibble$bike_age <- as.numeric(my_tibble$bike_age)
-my_summary(my_tibble$bike_age)
+my_summary <- my_summary(my_tibble$bike_age)
+my_summary_nolist <- unlist(my_summary)
+summary_matrix <- matrix(my_summary_nolist,ncol = 2)
+colnames(summary_matrix) <- c("Mean","Std dev")
+summary_matrix
 ```
+
+After conducting this initial exploratory data analysis, there are several relationships that could be explored further.  For example, we could hypothesize that car accidents involving bicycles are more likely to happen in certain locations.  We could also explore whether or not there is a particular combination of factors such as time of year, road condition, age group, and alcohol that could be used to model how likely it is that a fatal crash will occur.   
