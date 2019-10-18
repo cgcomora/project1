@@ -1,0 +1,123 @@
+---
+title: "Project1"
+author: "Chris Comora"
+date: "10/15/2019"
+output:
+  html_document:
+    toc: yes
+    toc_float: no
+---
+
+# Overview
+
+The data being explored comes from the data.gov website and can be found here <https://catalog.data.gov/dataset/bicycle-crashes>.  It contains police-reported information concering motor-vehicle crashes involving pedestrians and bicyclists in the Chapel Hill region of North Carolina.  
+This data is in the JSON (JavaScript Object Notation) format. JSON is used for storing and transporting data and "is often used when data is sent from a server to a web page."  (<https://www.w3schools.com/whatis/whatis_json.asp>).  
+
+A JSON file can be confusing to look at, but can be viewed in an application such as notepad.  Here is a look at our "bicycle-crashes" data as it appears when viewed in notepad:
+
+```{r graphics, echo=FALSE, eval=TRUE, warning=FALSE}
+knitr::include_graphics("C:/Users/W447075/Documents/json_ex.png")
+```
+
+What we see is a lot of name/value pairs, examples of which are highlighted in yellow.  The first example shows the name "ambulancer" with a value of "Yes" and the second shows the sex of the bike rider to be male.  
+
+The total dataset contains 330 observations of 48 variables.  
+```{r setup, include=FALSE}
+#load libraries and load google key for google maps API
+library(dplyr)
+library(jsonlite)
+library(kableExtra)
+library(DT)
+library(ggplot2)
+library(ggmap)
+register_google(key = "AIzaSyDlrsQQNa2bElzXnHyPhak28M4HMeZAunE")
+```
+
+# Import data
+
+Our first step is to read in our data using the fromJson() function from the package "jsonlite."  The jsonlite package allows us to convert between JSON and R without any loss of data.  I chose this package because I thought it would convert directly to a dataframe but it turned out to be more complicated than that!  <https://cran.r-project.org/web/packages/jsonlite/vignettes/json-aaquickstart.html>
+
+
+```{r json, echo=TRUE, eval=TRUE}
+#convert from JSON data to R object (dataframe)
+json <- fromJSON("bicycle.json")
+#simplify by applying unlist() to the dataframe
+my_json <- lapply(json,unlist)
+#bind rows back together in matrix format
+bicycle <- do.call("rbind", my_json)
+#convert back to dataframe and transpose
+bicycle_df <- as.data.frame(bicycle)
+bicycle_df_trans <- t(bicycle_df)
+my_tibble <- tbl_df(bicycle_df_trans)
+#convert to html friencly datatable w/ no rownames
+my_table <- datatable(bicycle_df_trans,rownames = FALSE)
+my_table
+```
+
+# Analysis
+
+We start with plotting the location of the crashes using the ggmap() function.  This may help inform our data analysis.  For example, why might the crashes be clustered in a certain location? 
+
+```{r map, echo=TRUE, eval=TRUE, warning=FALSE,message=FALSE}
+#separate geo coordinates into 2 separate vectors
+lat <- my_json$geo_point_2d[1:165]
+long <- my_json$geo_point_2d[166:330]
+#join vectors together in a matrix and coerce to dataframe
+coord <- cbind(lat,long)
+coord <- matrix(coord, ncol = 2)
+coord_df <- as.data.frame(coord)
+#plot map and overlay points representing crashes
+p <- ggmap(ggmap = get_map(center = c(lat = 35.9, lon = -79.050),zoom = 12)) + geom_point(data = coord_df,aes(coord_df$V2,coord_df$V1),col="red")
+p
+```
+
+Now we will use contingency tables <https://en.wikipedia.org/wiki/Contingency_table> to look at the frequency distribution of several variables.  
+
+```{r cont_tables, echo=FALSE, eval=TRUE}
+#create 1st contingency table
+ctab1 <- table(my_tibble$crsh_sevri,my_tibble$drvr_sex)
+ctab1 <-kable_styling(kable(ctab1,caption = "Contingency table showing severity of crash and sex of bicyclist"))
+ctab1
+#create 2nd contingency table
+ctab2 <- table(my_tibble$bike_race)
+ctab2 <- kable_styling(kable(ctab2))
+ctab2
+#create 3rd contingency table
+ctab3 <- table(my_tibble$crash_mont)
+ctab3 <- kable_styling(kable(ctab3))
+ctab3
+```
+To group the age of the bicyclists involved in crashes into categories, we create a new variable called "age_group".
+
+```{r, newvar, echo=FALSE, eval=TRUE}
+my_tibble$age_group = ifelse(my_tibble$bike_age >18, "Adult", ifelse(my_tibble$bike_age<=18,"Youth","Unknown"))
+ctab4 <- table(my_tibble$age_group, dnn = "Age_Group")
+ctab4 <- kable_styling(kable(ctab4))
+ctab4
+```
+Now lets look at some plots to further explore what relationships might exist between variables.  
+
+```{r plot1, echo=FALSE, eval=TRUE}
+#create bar plot
+g <- ggplot(my_tibble, aes(x = crsh_sevri))
+g + geom_bar(aes(fill=rd_conditi)) + labs(x="Crash Severity", title = "Barplot of crash severity and road condition") + theme(legend.title = element_blank())+ scale_x_discrete(labels = c("Disabling Injury", "Evident Injury", "Possible Injury", "Killed", "No Injury"))
+#coerce char var's to numeric
+driver_age <- as.numeric(my_tibble$drvr_age)
+bike_age <- as.numeric(my_tibble$bike_age)
+g2 <- ggplot(my_tibble, aes(x = factor(1))) + geom_boxplot(width = 0.4,aes(y = driver_age), fill = "blue") + facet_wrap(~crashalcoh) + labs(title = "Driver age for crashes involving and not involving alcohol", x = "") 
+g2
+#create scatter plot
+g + geom_point(aes(y = bike_age, col = bike_sex)) + scale_y_discrete(breaks  = c(10,20,30,40,50,60,70)) + scale_x_discrete(labels = c("Disabling Injury", "Evident Injury", "Possible Injury", "Killed", "No Injury")) + labs(title = "Biker age and crash severity according to sex",x = "Crash Severity", y = "Biker age")
+```
+
+Next, let's create a function to look at center and spread of age of bicyclists involved in crashes.
+
+```{r function, echo=FALSE, eval=TRUE}
+my_summary <- function(x){
+  mean <- mean(x, na.rm = TRUE)
+  stdev <- sd(x, na.rm = TRUE)
+return(list(mean,stdev))
+}
+my_tibble$bike_age <- as.numeric(my_tibble$bike_age)
+my_summary(my_tibble$bike_age)
+```
