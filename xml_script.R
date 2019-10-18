@@ -1,5 +1,13 @@
 #read in the xml file
-xmlfile = xmlParse("grad.xml")
+library(dplyr)
+library(xml2)
+library(XML)
+library(plyr)
+library(DT)
+library(ggplot2)
+
+
+xmlfile <- xmlParse("census.xml")
 
 #determine class of file
 class(xmlfile) #"XMLInternalDocument" "XMLAbstractDocument"
@@ -32,5 +40,17 @@ xml_list <- xmlToList(xmltop[[1]])
 xml_unlist <- unlist(xml_list)
 
 #coerce xml list to dataframe
-xml_df <- ldply(xml_list,data.frame)
-View(xml_df)
+xml_df <- (ldply(xml_list,data.frame))
+xml_df_nodup <- xml_df[!duplicated(xml_df$unique_id),]
+View(xml_df_nodup)
+
+#coerce to a table
+my_table <- datatable(xml_df_nodup)
+my_table
+
+xml_df_nodup$population_white <- as.numeric(xml_df_nodup$population_white)
+xml_df_nodup$population_black <- as.numeric(xml_df_nodup$population_black)
+xml_df_nodup$median_household_income <- as.numeric(xml_df_nodup$median_household_income)
+xml_df_nodup$masters_degree_male <- as.numeric(xml_df_nodup$masters_degree_male)
+g <- ggplot(data = xml_df_nodup, aes(x = xml_df_nodup$median_household_income,y = xml_df_nodup$masters_degree_male))
+g + geom_point() + geom_smooth(method = lm) +facet_wrap(~xml_df_nodup$block_group)
