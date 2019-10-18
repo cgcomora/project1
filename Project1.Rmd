@@ -71,7 +71,7 @@ p <- ggmap(ggmap = get_map(center = c(lat = 35.9, lon = -79.050),zoom = 12)) + g
 p
 ```
 
-Now we will use contingency tables <https://en.wikipedia.org/wiki/Contingency_table> to look at the frequency distribution of several variables.  
+Now we will use contingency tables to look at the frequency distribution of several variables. (<https://en.wikipedia.org/wiki/Contingency_table>)
 
 ```{r cont_tables, echo=FALSE, eval=TRUE}
 #create 1st contingency table
@@ -79,12 +79,12 @@ ctab1 <- table(my_tibble$crsh_sevri,my_tibble$drvr_sex)
 ctab1 <-kable_styling(kable(ctab1,caption = "Contingency table showing severity of crash and sex of bicyclist"))
 ctab1
 #create 2nd contingency table
-ctab2 <- table(my_tibble$bike_race)
-ctab2 <- kable_styling(kable(ctab2))
+ctab2 <- table(my_tibble$bike_race, dnn = "Race")
+ctab2 <- kable_styling(kable(ctab2, caption = "Contingency table showing frequency of crashes by race of bicyclist"))
 ctab2
 #create 3rd contingency table
-ctab3 <- table(my_tibble$crash_mont)
-ctab3 <- kable_styling(kable(ctab3))
+ctab3 <- table(my_tibble$crash_mont,dnn = "Month")
+ctab3 <- kable_styling(kable(ctab3, caption = "Contingency table showing frequency of crashes by month"))
 ctab3
 ```
 To group the age of the bicyclists involved in crashes into categories, we create a new variable called "age_group".
@@ -92,7 +92,7 @@ To group the age of the bicyclists involved in crashes into categories, we creat
 ```{r, newvar, echo=FALSE, eval=TRUE}
 my_tibble$age_group = ifelse(my_tibble$bike_age >18, "Adult", ifelse(my_tibble$bike_age<=18,"Youth","Unknown"))
 ctab4 <- table(my_tibble$age_group, dnn = "Age_Group")
-ctab4 <- kable_styling(kable(ctab4))
+ctab4 <- kable_styling(kable(ctab4, caption = "Contingency table showing frequency of crashes by Age Group"))
 ctab4
 ```
 Now lets look at some plots to further explore what relationships might exist between variables.  
