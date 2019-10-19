@@ -62,4 +62,32 @@ ctab1 <-kable_styling(kable(ctab1,caption = "Numeric summary of block groups"))
 ctab1
 ```
 
-Now we will create a new 
+Now we will create a new variable that classifies areas as "low income", "middle class", or "wealthy" based on median household income.  
+
+```{r, newvar, echo=TRUE, eval=TRUE}
+my_tibble$median_household_income <- as.numeric(my_tibble$median_household_income)
+my_tibble$class <- ifelse(my_tibble$median_household_income < "20000", "low income", ifelse(my_tibble$median_household_income > "20000" & my_tibble$median_household_income < "80000","middle class","Wealthy"))
+ctab2 <- table(my_tibble$class, dnn = "Class")
+ctab2 <- kable_styling(kable(ctab2, caption = "Numeric summary of class groups"))
+ctab2
+```
+# Plots
+
+Now let's look at some graphical representations of the data to explore what might warrant further investigation:
+
+```{r plots, echo=TRUE, eval=TRUE, warning=FALSE, message=FALSE}
+#coerce vars to numeric
+my_tibble$population_white <- as.numeric(my_tibble$population_white)
+my_tibble$population_black <- as.numeric(my_tibble$population_black)
+my_tibble$median_household_income <- as.numeric(my_tibble$median_household_income)
+my_tibble$masters_degree_male <- as.numeric(my_tibble$masters_degree_male)
+#set-up scatter plots with regression and facet by block group
+g <- ggplot(data = my_tibble, aes(x = my_tibble$median_household_income,y = my_tibble$masters_degree_male))
+g + geom_point() + geom_smooth(method = lm) +facet_wrap(~my_tibble$block_group) + labs(title = "Income and education by block group", y= "Males with Masters Degrees",x="Median Income")
+```
+Based on these plots we can reasonably say that median income rises with increased education in the male population in each block.  
+
+```{r barplot, echo=TRUE, eval=TRUE, message=FALSE}
+g <- ggplot(my_tibble,aes(x=class)) + geom_histogram(stat = "count", aes(fill = my_tibble$census_year))
+g
+```
