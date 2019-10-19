@@ -1,0 +1,65 @@
+---
+title: "Project1XML"
+author: "Chris Comora"
+date: "10/17/2019"
+output: html_document
+---
+
+# Overview
+
+The data being explored comes from the data.gov website and can be found here <https://data.brla.gov/api/views/xsrb-mxqt/rows.xml>.  It contains summary statistics from the 2000 and 2010 United States Census including population, demographics, education, and housing information
+
+The data is in the Extensible Markup Language (XML) format.  It is a language that puts documents in a format that can be read by both humans and machines.  "The design goals of XML emphasize simplicity, generality, and usability across the Internet." (source: <https://en.wikipedia.org/wiki/XML>)
+
+An XML file is generally organized into "nodes" with branches and child nodes.  All together, the nodes make up the pieces of information that the file contains.  Here's a look at our raw file:
+
+```{r graphics, echo=FALSE, eval=TRUE, warning=FALSE, message=FALSE}
+knitr::include_graphics("C:/Users/W447075/Documents/xml.png")
+#load libraries
+library(plyr)
+library(dplyr)
+library(kableExtra)
+library(DT)
+library(ggplot2)
+library(XML)
+```
+
+The next set of code will help us understand the file structure.  We will use the XML package, which has several approaches for reading and creating XML documents.  I chose this package because I found several helpful resources for applying the functions within, including this one:  <http://www.informit.com/articles/article.aspx?p=2215520>
+
+
+
+```{r structure, echo=TRUE,eval=TRUE,message=FALSE}
+#convert to xml document object
+xmlfile <- xmlParse("census.xml")
+xmltop <- xmlRoot(xmlfile) #gives contents of root
+xmlName(xmltop) #gives name of node
+xmlSize(xmltop) #give number of children in node
+xmlName(xmltop[[1]]) #name of root's children
+#how many nodes are in the child?
+xmlSize(xmltop[[1]]) #609 nodes in child
+```
+
+This next code chunk will coerce our XML data into a data frame and remove duplicate rows.
+
+```{r dataframe, echo=TRUE, eval=TRUE, message=FALSE}
+#unlist the lists to a vector
+xml_list <- xmlToList(xmltop[[1]])
+xml_unlist <- unlist(xml_list)
+#coerce xml list to dataframe
+xml_df <- (ldply(xml_list,data.frame))
+#remove rows with duplicate unique_ids
+xml_df_nodup <- xml_df[!duplicated(xml_df$unique_id),]
+```
+# Analysis
+
+We will start with a contingency table to look at the frequency distribution of block groups. More information on contingency tables can be found here:   (<https://en.wikipedia.org/wiki/Contingency_table>)
+
+```{r cont_tables, echo=TRUE, eval=TRUE}
+#create contingency table
+my_tibble <- tbl_df(xml_df_nodup)
+ctab1 <- table(my_tibble$block_group,dnn = "Block_group")
+ctab1 <-kable_styling(kable(ctab1,caption = "Numeric summary of block groups"))
+ctab1
+```
+
+Now we will create a new 
