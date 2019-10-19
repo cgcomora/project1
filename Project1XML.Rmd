@@ -2,7 +2,10 @@
 title: "Project1XML"
 author: "Chris Comora"
 date: "10/17/2019"
-output: html_document
+output:
+  html_document:
+    toc: true
+    toc_float: no
 ---
 
 # Overview
@@ -82,12 +85,36 @@ my_tibble$population_black <- as.numeric(my_tibble$population_black)
 my_tibble$median_household_income <- as.numeric(my_tibble$median_household_income)
 my_tibble$masters_degree_male <- as.numeric(my_tibble$masters_degree_male)
 #set-up scatter plots with regression and facet by block group
-g <- ggplot(data = my_tibble, aes(x = my_tibble$median_household_income,y = my_tibble$masters_degree_male))
-g + geom_point() + geom_smooth(method = lm) +facet_wrap(~my_tibble$block_group) + labs(title = "Income and education by block group", y= "Males with Masters Degrees",x="Median Income")
+g1 <- ggplot(data = my_tibble, aes(x = my_tibble$median_household_income,y = my_tibble$masters_degree_male))
+g1 + geom_point() + geom_smooth(method = lm) +facet_wrap(~my_tibble$block_group) + labs(title = "Income and education by block group", y= "Males with Masters Degrees",x="Median Income")
 ```
+
 Based on these plots we can reasonably say that median income rises with increased education in the male population in each block.  
 
-```{r barplot, echo=TRUE, eval=TRUE, message=FALSE}
-g <- ggplot(my_tibble,aes(x=class)) + geom_histogram(stat = "count", aes(fill = my_tibble$census_year))
-g
+```{r barplot, echo=TRUE, eval=TRUE, message=FALSE, warning=FALSE}
+g2 <- ggplot(my_tibble,aes(x=class)) + geom_histogram(stat = "count", aes(fill = my_tibble$census_year))
+g2
 ```
+
+```{r boxplot, echo=TRUE, eval=TRUE, message=FALSE, warning=FALSE}
+g3 <- ggplot(xml_df_nodup, aes( x = factor(1)))
+g3 + geom_boxplot(aes(y=my_tibble$median_household_income)) + facet_wrap(~my_tibble$block_group) + labs(title="Boxplot of median income by block group", y = "Median Income")
+```
+
+Next, let's create a function to look at center and spread of the number of females with masters degrees in each block.    
+
+```{r function, echo=TRUE, eval=TRUE, warning=FALSE}
+my_summary <- function(x){
+  mean <- mean(x, na.rm = TRUE)
+  stdev <- sd(x, na.rm = TRUE)
+return(list(mean,stdev))
+}
+my_tibble$masters_degree_female <- as.numeric(my_tibble$masters_degree_female)
+my_summary <- my_summary(my_tibble$masters_degree_female)
+my_summary_nolist <- unlist(my_summary)
+summary_matrix <- matrix(my_summary_nolist,ncol = 2)
+colnames(summary_matrix) <- c("Mean","Std dev")
+summary_matrix
+```
+
+After conducting this initial exploratory data analysis, it would be interesting to further explore the factors that could predict median household income.  Our data suggests that level of education has some impact but what about whether you own or rent a home?  What about the relationship between race and income?  
